@@ -1,20 +1,40 @@
-public class Main {
-    public static void main(String[] args) {
+public class Network {
+    private Chain chain = new Chain();
+    private Node A = new Node("A", chain);
+    private Node B = new Node("B", chain);
+    private Node C = new Node("C", chain);
+    private Miner miner = new Miner("Miner", A, 2);
 
-        Blockchain.chain.add(new Block("Genesis Block", "0"));  
+    public Network() {
+        chain.createGenesisUTXO("Alice", 100);
+    }
 
-        System.out.println("Adding Block 1...");
-        Blockchain.addBlock(new Block("Block #1 Data", Blockchain.getLatestBlock().hash));
+    public String createTransaction(String from, String to, double amount) {
+        Transaction tx = chain.createTransaction(from, to, amount);
+        if (tx == null)
+            return "Transaction rejected.";
+        A.receiveTx(tx);
+        B.receiveTx(tx);
+        C.receiveTx(tx);
+        return "Transaction broadcast: " + tx.toString();
+    }
 
-        System.out.println("Adding Block 2...");
-        Blockchain.addBlock(new Block("Block #2 Data", Blockchain.getLatestBlock().hash));
+    public String mineBlock() {
+        Block block = miner.mineOnce();
+        if (block == null)
+            return "No transactions to mine.";
+        A.receiveBlock(block);
+        B.receiveBlock(block);
+        C.receiveBlock(block);
+        return "Block mined: " + block.hash;
+    }
 
-        System.out.println("\nBlockchain is valid: " + Blockchain.isChainValid());
+    public Object getChain() { return chain.blocks; }
+    public Object getMempool() { return A.getMempool(); }
+    public Object getUtxo() { return chain.getUtxo(); }
 
-        // Print the full blockchain
-        for (Block b : Blockchain.chain) {
-            System.out.println("\nHash: " + b.hash);
-            System.out.println("Prev: " + b.previousHash);
-        }
+    public void reset() {
+        this.chain = new Chain();
+        chain.createGenesisUTXO("Alice", 100);
     }
 }
